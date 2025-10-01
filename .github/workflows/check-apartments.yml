@@ -1,21 +1,28 @@
 name: Check apartments hourly
 on:
   schedule:
-    - cron: "0 * * * *"   # every hour
-  workflow_dispatch: {}   # manual trigger
+    - cron: "0 * * * *"   # hourly
+  workflow_dispatch: {}
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
     permissions:
-      contents: write   # allow committing the updated JSON
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm i jsdom@24
-      - run: node scripts/check-apartments.js
+
+      # Install Playwright + Chromium
+      - run: npm i playwright
+      - run: npx playwright install chromium
+
+      # Run the scraper (renders JS, writes status.json)
+      - run: node scripts/check-apartments.playwright.mjs
+
+      # Commit status.json if changed
       - name: Commit status.json if changed
         run: |
           if [[ `git status --porcelain` ]]; then
@@ -25,3 +32,12 @@ jobs:
             git commit -m "Update apartment status (hourly)"
             git push
           fi
+
+      # Optional: upload debug files if there were issues
+      - name: Upload debug artifacts (if any)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-html-screens
+          path: debug/
+          if-no-files-found: ignore
