@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -19,17 +20,23 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install Playwright
-        run: npm install playwright
+      # Install the Playwright test package (provides the 'playwright' CLI)
+      - name: Install Playwright packages
+        run: |
+          npm install --no-audit --no-fund @playwright/test playwright
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+      # Install Chromium and required system deps (call CLI directly to avoid npx PATH issues)
+      - name: Install Playwright browsers (Chromium + deps)
+        run: |
+          ./node_modules/.bin/playwright install --with-deps chromium
 
+      # Run the scraper (renders JS, writes status.json and optional alerts)
       - name: Run scraper
         run: node scripts/check-apartments.playwright.mjs
         env:
-          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }} # optional: set in repo secrets if you want notifications
 
+      # Commit status.json if changed
       - name: Commit status.json if changed
         run: |
           if [[ -n "$(git status --porcelain)" ]]; then
@@ -40,6 +47,7 @@ jobs:
             git push
           fi
 
+      # Upload debug artifacts (if any)
       - name: Upload debug artifacts
         if: always()
         uses: actions/upload-artifact@v4
