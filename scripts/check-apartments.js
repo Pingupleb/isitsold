@@ -42,33 +42,40 @@ const AREAS = [
 ];
 
 // Base URL where those pages live
-const BASE = "https://www.kokstadstasjon.no/"; // <-- change this
+const BASE = "https://www.kokstadstasjon.no/";
 
 // Decide status by inspecting HTML. Adjust to your real DOM/text.
 function decideStatus(document) {
-  // Grab the first status span
   const statusEl = document.querySelector(
-    '.plantegning_ledig, .plantegning_solgt, .plantegning_reservert'
+    ".maintext_valgt > .plantegning_ledig, " +
+    ".maintext_valgt > .plantegning_solgt, " +
+    ".maintext_valgt > .plantegning_reservert"
   );
 
-  if (!statusEl) return { status: 'unknown', price: 0 };
+  if (!statusEl) {
+    return { status: "unknown", price: 0 };
+  }
 
-  if (statusEl.classList.contains('plantegning_solgt')) {
-    return { status: 'sold', price: 0 };
+  const text = statusEl.textContent.trim().toLowerCase();
+
+  if (statusEl.classList.contains("plantegning_solgt") || text.includes("solgt")) {
+    return { status: "sold", price: 0 };
   }
-  if (statusEl.classList.contains('plantegning_reservert')) {
-    return { status: 'reserved', price: 0 };
+
+  if (statusEl.classList.contains("plantegning_reservert") || text.includes("reservert")) {
+    return { status: "reserved", price: 0 };
   }
-  if (statusEl.classList.contains('plantegning_ledig')) {
-    // If available, also try to find a price
-    const priceEl = document.querySelector('.price, .pris, .apartment-price');
+
+  if (statusEl.classList.contains("plantegning_ledig") || text.includes("ledig")) {
+    // still optional: look for a price element if you want
+    const priceEl = document.querySelector(".price, .pris, .apartment-price");
     const price = priceEl
-      ? Number(priceEl.textContent.replace(/[^\d]/g, ''))
+      ? Number(priceEl.textContent.replace(/[^\d]/g, ""))
       : 0;
-    return { status: 'available', price };
+    return { status: "available", price };
   }
 
-  return { status: 'unknown', price: 0 };
+  return { status: "unknown", price: 0 };
 }
 
 async function main() {
@@ -80,6 +87,10 @@ async function main() {
       const res = await fetch(url, { redirect: "follow" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const html = await res.text();
+      console.log('Fetched:', url, 'length=', html.length,
+            'has_ledig=', html.includes('plantegning_ledig'),
+            'has_solgt=', html.includes('plantegning_solgt'),
+            'has_res=', html.includes('plantegning_reservert'));
       const dom = new JSDOM(html);
       out[per] = decideStatus(dom.window.document);
     } catch (e) {
