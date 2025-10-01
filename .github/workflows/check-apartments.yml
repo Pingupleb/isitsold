@@ -19,20 +19,17 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install dependencies
-        run: npm install
+      - name: Install Playwright
+        run: npm install playwright
 
-      # Install Playwright + Chromium and system dependencies
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      # Run the scraper (renders JS, writes status.json and optional alerts)
       - name: Run scraper
         run: node scripts/check-apartments.playwright.mjs
         env:
-          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }} # optional: for notifications
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
 
-      # Commit status.json if changed
       - name: Commit status.json if changed
         run: |
           if [[ -n "$(git status --porcelain)" ]]; then
@@ -43,7 +40,6 @@ jobs:
             git push
           fi
 
-      # Upload debug artifacts (if any)
       - name: Upload debug artifacts
         if: always()
         uses: actions/upload-artifact@v4
