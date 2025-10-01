@@ -22,15 +22,15 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # Install Playwright browsers on the runner (Chromium + OS deps)
-      - name: Install Playwright Browsers
-        uses: microsoft/playwright-github-action@v1
+      # Install Playwright + Chromium and system dependencies
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
 
       # Run the scraper (renders JS, writes status.json and optional alerts)
       - name: Run scraper
         run: node scripts/check-apartments.playwright.mjs
         env:
-          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }} # optional: set in repo secrets if you want webhook alerts
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }} # optional: for notifications
 
       # Commit status.json if changed
       - name: Commit status.json if changed
