@@ -1,7 +1,6 @@
 // Node 20 script: fetch each href and decide status.
 // Customize the "decideStatus" function to match your actual page content!
 
-import fetch from "node-fetch";
 import { JSDOM } from "jsdom";
 import fs from "fs";
 
